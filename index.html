@@ -1,0 +1,1879 @@
+<!doctype html>
+<html lang="hi-Latn">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#f472b6" />
+  <title>Dil se ❤️</title>
+  <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+  <style>
+    /* --- Soft pastel background + subtle motion --- */
+    .bg-ambient {
+      background: radial-gradient(1200px 700px at 20% 10%, rgba(244,114,182,.35), transparent 60%),
+                  radial-gradient(900px 600px at 85% 25%, rgba(168,85,247,.22), transparent 55%),
+                  radial-gradient(900px 700px at 40% 90%, rgba(59,130,246,.14), transparent 55%),
+                  linear-gradient(180deg, rgba(255,241,242,1) 0%, rgba(250,245,255,1) 50%, rgba(255,247,237,1) 100%);
+      animation: ambientShift 14s ease-in-out infinite;
+    }
+    @keyframes ambientShift { 0%,100% { filter: hue-rotate(0deg) saturate(1); } 50% { filter: hue-rotate(6deg) saturate(1.08); } }
+
+    /* --- Heartbeat --- */
+    @keyframes heartbeat {
+      0%, 100% { transform: scale(1); }
+      14% { transform: scale(1.08); }
+      28% { transform: scale(1); }
+      42% { transform: scale(1.12); }
+      70% { transform: scale(1); }
+    }
+    .animate-heartbeat { animation: heartbeat 1.35s ease-in-out infinite; }
+
+    /* --- Floaty particles --- */
+    @keyframes floatUp {
+      0% { transform: translate3d(var(--x0), 0, 0) scale(.9); opacity: 0; }
+      12% { opacity: 1; }
+      100% { transform: translate3d(var(--x1), -180px, 0) scale(1.15); opacity: 0; }
+    }
+    .particle { position: absolute; left: var(--left); bottom: -12px; animation: floatUp var(--dur) ease-out forwards; filter: drop-shadow(0 6px 10px rgba(15, 23, 42, .12)); user-select: none; pointer-events: none; }
+
+    /* --- Modal entrance --- */
+    @keyframes popIn { from { transform: translateY(12px) scale(.98); opacity: 0; } to { transform: translateY(0) scale(1); opacity: 1; } }
+    .animate-popIn { animation: popIn .22s ease-out; }
+
+    /* --- Toast --- */
+    @keyframes toastIn { from { transform: translateY(12px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+    @keyframes toastOut { to { transform: translateY(12px); opacity: 0; } }
+
+    /* --- Toggle switch --- */
+    .switch { width: 44px; height: 26px; border-radius: 999px; background: rgba(148, 163, 184, .45); position: relative; transition: background .18s ease; }
+    .switch::after { content: ""; position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; border-radius: 999px; background: white; transition: transform .18s ease; box-shadow: 0 6px 14px rgba(15,23,42,.18); }
+    .switch[data-on="true"] { background: rgba(244,114,182,.85); }
+    .switch[data-on="true"]::after { transform: translateX(18px); }
+
+    /* --- Confetti canvas --- */
+    #confettiCanvas { position: fixed; inset: 0; pointer-events: none; z-index: 60; }
+
+    /* Reduce motion */
+    @media (prefers-reduced-motion: reduce) {
+      .bg-ambient, .animate-heartbeat, .particle, .animate-popIn { animation: none !important; }
+    }
+  </style>
+</head>
+<body class="min-h-screen text-slate-800 selection:bg-pink-200/70 selection:text-slate-900">
+  <div class="fixed inset-0 bg-ambient"></div>
+
+  <div id="app" class="relative mx-auto min-h-screen max-w-lg flex flex-col">
+    <!-- ROLE SETUP MODAL (first time only) -->
+    <div id="roleSetupModal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center z-50">
+      <div class="w-full sm:max-w-md mx-auto rounded-3xl bg-white/95 border border-white shadow-xl p-6 animate-popIn">
+        <div class="text-center">
+          <div class="text-5xl mb-3">❤️</div>
+          <h1 class="text-2xl font-extrabold">Dil se</h1>
+          <p class="text-xs text-slate-500 mt-1">Pyaar bhara ek platform</p>
+        </div>
+
+        <p class="mt-5 text-sm text-slate-700 text-center">Aap kaun hain?</p>
+
+        <div class="mt-5 space-y-3">
+          <button id="btnRoleAdmin" class="w-full rounded-2xl bg-gradient-to-r from-pink-500 to-purple-500 text-white px-4 py-3 text-sm font-semibold shadow-sm hover:shadow-md active:scale-[.99]">
+            👨‍👩‍👧 Admin (Main)
+          </button>
+          <button id="btnRoleMom" class="w-full rounded-2xl bg-gradient-to-r from-pink-400 to-rose-400 text-white px-4 py-3 text-sm font-semibold shadow-sm hover:shadow-md active:scale-[.99]">
+            🌸 Maa
+          </button>
+          <button id="btnRoleDad" class="w-full rounded-2xl bg-gradient-to-r from-purple-400 to-indigo-400 text-white px-4 py-3 text-sm font-semibold shadow-sm hover:shadow-md active:scale-[.99]">
+            🌷 Papa
+          </button>
+        </div>
+
+        <p class="mt-4 text-xs text-slate-500 text-center">Ek baar select karne ke baad, role change karne ke liye Settings mein jain.</p>
+      </div>
+    </div>
+
+    <header class="px-4 pt-5 pb-3">
+      <div class="flex items-start justify-between gap-3">
+        <div>
+          <h1 class="text-2xl font-extrabold tracking-tight">Dil se <span class="">❤️</span></h1>
+          <p id="headerSubtitle" class="text-sm text-slate-600">Maa-Papa ke liye har din pyaar bhara sandesh</p>
+        </div>
+        <button id="btnQuickSpeak" class="shrink-0 rounded-2xl bg-white/70 backdrop-blur border border-white/70 shadow-sm px-3 py-2 text-sm font-semibold hover:bg-white active:scale-[.99]" title="Aaj ka sandesh sunein">
+          🔊 Sunein
+        </button>
+      </div>
+
+      <div id="statsSection" class="mt-3 grid grid-cols-3 gap-2">
+        <div class="rounded-2xl bg-white/70 backdrop-blur border border-white/80 shadow-sm p-3">
+          <div class="text-xs text-slate-500">Streak</div>
+          <div class="mt-1 flex items-center gap-2">
+            <div class="text-xl">🔥</div>
+            <div class="text-lg font-bold" id="statStreak">0</div>
+          </div>
+        </div>
+        <div class="rounded-2xl bg-white/70 backdrop-blur border border-white/80 shadow-sm p-3">
+          <div class="text-xs text-slate-500">Love Coins</div>
+          <div class="mt-1 flex items-center gap-2">
+            <div class="text-xl">🪙</div>
+            <div class="text-lg font-bold" id="statCoins">0</div>
+          </div>
+        </div>
+        <div class="rounded-2xl bg-white/70 backdrop-blur border border-white/80 shadow-sm p-3">
+          <div class="text-xs text-slate-500">Surprises</div>
+          <div class="mt-1 flex items-center justify-between">
+            <div class="text-xl" aria-hidden="true">✨</div>
+            <button id="toggleSurpriseMini" class="switch" data-on="true" aria-label="Surprise effects"></button>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <main class="flex-1 px-4 pb-24">
+      <!-- HOME -->
+      <section id="screenHome" class="space-y-3">
+        <!-- Mom card (hidden for dad role, shown for admin/mom) -->
+        <div id="momCardHome" class="rounded-3xl bg-white/75 backdrop-blur border border-white/80 shadow-sm p-4">
+          <div class="flex items-center justify-between gap-3">
+            <div>
+              <div class="text-xs text-slate-500">Aaj ka sandesh</div>
+              <div class="mt-1 text-lg font-bold">Maa ke liye <span aria-hidden="true">🌸💖👶✨</span></div>
+            </div>
+            <div class="flex items-center gap-2">
+              <button data-who="mom" class="btnPlayToday rounded-2xl bg-pink-500 text-white px-3 py-2 text-sm font-semibold shadow-sm hover:bg-pink-600 active:scale-[.99]">▶️ Sunein</button>
+              <button data-who="mom" class="btnOpenToday rounded-2xl bg-white/80 border border-white shadow-sm px-3 py-2 text-sm font-semibold hover:bg-white active:scale-[.99]">📩 Kholein</button>
+            </div>
+          </div>
+          <p id="todayMom" class="mt-3 text-slate-700 leading-relaxed"></p>
+          <div class="mt-3 flex items-center justify-between text-xs text-slate-500">
+            <div>Agla reminder: <span id="nextMom">—</span></div>
+            <button data-who="mom" class="btnTestNow text-pink-700 font-semibold hover:underline">Abhi test karein</button>
+          </div>
+        </div>
+
+        <!-- Dad card (hidden for mom role, shown for admin/dad) -->
+        <div id="dadCardHome" class="rounded-3xl bg-white/75 backdrop-blur border border-white/80 shadow-sm p-4">
+          <div class="flex items-center justify-between gap-3">
+            <div>
+              <div class="text-xs text-slate-500">Aaj ka sandesh</div>
+              <div class="mt-1 text-lg font-bold">Papa ke liye <span aria-hidden="true">🌷❤️⭐</span></div>
+            </div>
+            <div class="flex items-center gap-2">
+              <button data-who="dad" class="btnPlayToday rounded-2xl bg-purple-500 text-white px-3 py-2 text-sm font-semibold shadow-sm hover:bg-purple-600 active:scale-[.99]">▶️ Sunein</button>
+              <button data-who="dad" class="btnOpenToday rounded-2xl bg-white/80 border border-white shadow-sm px-3 py-2 text-sm font-semibold hover:bg-white active:scale-[.99]">📩 Kholein</button>
+            </div>
+          </div>
+          <p id="todayDad" class="mt-3 text-slate-700 leading-relaxed"></p>
+          <div class="mt-3 flex items-center justify-between text-xs text-slate-500">
+            <div>Agla reminder: <span id="nextDad">—</span></div>
+            <button data-who="dad" class="btnTestNow text-purple-700 font-semibold hover:underline">Abhi test karein</button>
+          </div>
+        </div>
+
+        <div class="rounded-3xl bg-white/70 backdrop-blur border border-white/80 shadow-sm p-4">
+          <div class="flex items-center justify-between">
+            <div class="font-bold">Aaj ke pyaare reminders</div>
+            <button id="btnEnableNotifications" class="text-sm font-semibold text-slate-700 hover:underline">(Vikalpik) Notifications</button>
+          </div>
+          <p class="mt-2 text-sm text-slate-600">Yeh app browser mein khula rahe to schedule ke anusaar messages khud pop-up honge.</p>
+          <div id="scheduleGrid" class="mt-3 grid grid-cols-2 gap-2 text-sm">
+            <div id="scheduleGridMom" class="rounded-2xl bg-white/70 border border-white p-3">
+              <div class="text-xs text-slate-500">Maa</div>
+              <div class="mt-1" id="homeScheduleMom">—</div>
+            </div>
+            <div id="scheduleGridDad" class="rounded-2xl bg-white/70 border border-white p-3">
+              <div class="text-xs text-slate-500">Papa</div>
+              <div class="mt-1" id="homeScheduleDad">—</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="rounded-3xl bg-white/70 backdrop-blur border border-white/80 shadow-sm p-4 overflow-hidden">
+          <div class="flex items-center justify-between gap-3">
+            <div class="font-bold">🤗 Pyaara hug</div>
+            <button id="btnMiniHug" class="rounded-2xl bg-white/80 border border-white shadow-sm px-3 py-2 text-sm font-semibold hover:bg-white active:scale-[.99]">Kholein</button>
+          </div>
+          <p class="mt-2 text-sm text-slate-600">App khulte hi ek chhota sa hug/kiss animation — bas pyaar ke liye.</p>
+          <div class="mt-3 relative h-20 rounded-2xl bg-gradient-to-r from-pink-100/70 via-purple-100/60 to-rose-100/70 border border-white">
+            <div class="absolute inset-0 flex items-center justify-center">
+              <div class="animate-heartbeat text-4xl" aria-hidden="true">💞</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- SEND -->
+      <section id="screenSend" class="hidden space-y-3">
+        <div class="rounded-3xl bg-white/75 backdrop-blur border border-white/80 shadow-sm p-4">
+          <div class="flex items-center justify-between">
+            <h2 class="text-lg font-extrabold">Sandesh bhejein</h2>
+            <div class="text-xs text-slate-500">Text → aapki aawaaz (TTS)</div>
+          </div>
+          <p class="mt-2 text-sm text-slate-600">Preset message par tap karein ya apna custom likhein. "Send Now" karne par pop-up + animation + aawaaz chalegi.</p>
+        </div>
+
+        <!-- MOM CARD (admin/mom only) -->
+        <div id="sendMomCard" class="rounded-3xl bg-white/75 backdrop-blur border border-white/80 shadow-sm p-4">
+          <div class="flex items-center justify-between gap-3">
+            <div>
+              <div class="text-xs text-slate-500">Maa</div>
+              <div class="text-lg font-bold">🌸 Pyaar bhara sandesh</div>
+            </div>
+            <div class="flex gap-2">
+              <button data-who="mom" class="btnPreviewSpeak rounded-2xl bg-white/80 border border-white shadow-sm px-3 py-2 text-sm font-semibold hover:bg-white">🔊 Preview</button>
+              <button data-who="mom" class="btnSendNow rounded-2xl bg-pink-500 text-white px-3 py-2 text-sm font-semibold shadow-sm hover:bg-pink-600">💌 Send Now</button>
+            </div>
+          </div>
+
+          <div class="mt-3">
+            <div class="text-xs text-slate-500 mb-2">Preset messages</div>
+            <div id="presetMom" class="flex gap-2 overflow-x-auto pb-1"></div>
+          </div>
+
+          <div class="mt-3">
+            <label class="text-xs text-slate-500">Custom message</label>
+            <textarea id="inputMom" rows="3" class="mt-1 w-full rounded-2xl bg-white/80 border border-white shadow-sm px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-pink-300" placeholder="Maa, dhyaan rakhna ❤️"></textarea>
+          </div>
+
+          <div class="mt-3 grid grid-cols-2 gap-2">
+            <div class="rounded-2xl bg-white/70 border border-white p-3">
+              <div class="text-xs text-slate-500">Effect</div>
+              <select id="effectMom" class="mt-1 w-full rounded-xl bg-white/90 border border-white px-2 py-2 text-sm">
+                <option value="hearts">💖 Hearts</option>
+                <option value="flowers">🌸 Flowers</option>
+                <option value="sparkles">✨ Sparkles</option>
+                <option value="confetti">🎊 Confetti</option>
+              </select>
+            </div>
+            <div class="rounded-2xl bg-white/70 border border-white p-3">
+              <div class="text-xs text-slate-500">Voice</div>
+              <select id="voiceMom" class="mt-1 w-full rounded-xl bg-white/90 border border-white px-2 py-2 text-sm">
+                <option value="default">Tanu - Default</option>
+                <option value="prerecorded">Prerecorded Voice</option>
+              </select>
+            </div>
+          </div>
+
+          <button data-who="mom" class="btnSaveToRotation mt-3 w-full rounded-xl bg-white/90 border border-white px-3 py-2 text-sm font-semibold hover:bg-white">➕ Save message</button>
+          <div class="mt-1 text-[11px] text-slate-500">(Reminder mein ghoomkar aayega)</div>
+        </div>
+
+        <!-- DAD CARD (admin/dad only) -->
+        <div id="sendDadCard" class="rounded-3xl bg-white/75 backdrop-blur border border-white/80 shadow-sm p-4">
+          <div class="flex items-center justify-between gap-3">
+            <div>
+              <div class="text-xs text-slate-500">Papa</div>
+              <div class="text-lg font-bold">🌷 Sammaan + pyaar</div>
+            </div>
+            <div class="flex gap-2">
+              <button data-who="dad" class="btnPreviewSpeak rounded-2xl bg-white/80 border border-white shadow-sm px-3 py-2 text-sm font-semibold hover:bg-white">🔊 Preview</button>
+              <button data-who="dad" class="btnSendNow rounded-2xl bg-purple-500 text-white px-3 py-2 text-sm font-semibold shadow-sm hover:bg-purple-600">💌 Send Now</button>
+            </div>
+          </div>
+
+          <div class="mt-3">
+            <div class="text-xs text-slate-500 mb-2">Preset messages</div>
+            <div id="presetDad" class="flex gap-2 overflow-x-auto pb-1"></div>
+          </div>
+
+          <div class="mt-3">
+            <label class="text-xs text-slate-500">Custom message</label>
+            <textarea id="inputDad" rows="3" class="mt-1 w-full rounded-2xl bg-white/80 border border-white shadow-sm px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-300" placeholder="Papa, khud ka khayaal rakhna 🌷"></textarea>
+          </div>
+
+          <div class="mt-3 grid grid-cols-2 gap-2">
+            <div class="rounded-2xl bg-white/70 border border-white p-3">
+              <div class="text-xs text-slate-500">Effect</div>
+              <select id="effectDad" class="mt-1 w-full rounded-xl bg-white/90 border border-white px-2 py-2 text-sm">
+                <option value="stars">⭐ Stars</option>
+                <option value="sparkles">✨ Sparkles</option>
+                <option value="confetti">🎊 Confetti</option>
+                <option value="hearts">❤️ Hearts</option>
+              </select>
+            </div>
+            <div class="rounded-2xl bg-white/70 border border-white p-3">
+              <div class="text-xs text-slate-500">Voice</div>
+              <select id="voiceDad" class="mt-1 w-full rounded-xl bg-white/90 border border-white px-2 py-2 text-sm">
+                <option value="default">Tanu - Default</option>
+                <option value="prerecorded">Prerecorded Voice</option>
+              </select>
+            </div>
+          </div>
+
+          <button data-who="dad" class="btnSaveToRotation mt-3 w-full rounded-xl bg-white/90 border border-white px-3 py-2 text-sm font-semibold hover:bg-white">➕ Save message</button>
+          <div class="mt-1 text-[11px] text-slate-500">(Reminder mein ghoomkar aayega)</div>
+        </div>
+
+        <div class="rounded-3xl bg-white/70 backdrop-blur border border-white/80 shadow-sm p-4">
+          <div class="flex items-center justify-between">
+            <div class="font-bold">📦 Backup / Share</div>
+            <button id="btnShare" class="rounded-2xl bg-white/80 border border-white shadow-sm px-3 py-2 text-sm font-semibold hover:bg-white">Share</button>
+          </div>
+          <p class="mt-2 text-sm text-slate-600">Multi-phone ke liye: Export karke doosre phone mein Import karein, ya share karein. (Free browser app — serverless)</p>
+          <div class="mt-3 grid grid-cols-2 gap-2">
+            <button id="btnExport" class="rounded-2xl bg-white/80 border border-white shadow-sm px-3 py-3 text-sm font-semibold hover:bg-white">⬇️ Export</button>
+            <label class="rounded-2xl bg-white/80 border border-white shadow-sm px-3 py-3 text-sm font-semibold hover:bg-white text-center cursor-pointer">
+              ⬆️ Import
+              <input id="fileImport" type="file" accept="application/json" class="hidden" />
+            </label>
+          </div>
+        </div>
+      </section>
+
+      <!-- REMINDERS -->
+      <section id="screenReminders" class="hidden space-y-3">
+        <div class="rounded-3xl bg-white/75 backdrop-blur border border-white/80 shadow-sm p-4">
+          <div class="flex items-center justify-between">
+            <h2 class="text-lg font-extrabold">Reminder</h2>
+            <button id="btnSaveReminders" class="rounded-2xl bg-slate-900 text-white px-3 py-2 text-sm font-semibold shadow-sm hover:bg-slate-800 active:scale-[.99]">Save</button>
+          </div>
+          <p class="mt-2 text-sm text-slate-600">Subah/Dopahar/Shaam/Raat — time badlein aur enable/disable karein. (Yeh in-page reminder hai; tab open rahe to pop-up aayega)</p>
+          <div class="mt-3 rounded-2xl bg-white/70 border border-white p-3">
+            <div class="flex items-center justify-between">
+              <div>
+                <div class="text-sm font-bold">Har baar thoda badlein</div>
+                <div class="text-xs text-slate-500">Shabd/emoji mein halka variation</div>
+              </div>
+              <button id="toggleVariation" class="switch" data-on="true" aria-label="Variation"></button>
+            </div>
+          </div>
+        </div>
+
+        <div id="reminderMomSection" class="rounded-3xl bg-white/75 backdrop-blur border border-white/80 shadow-sm p-4">
+          <div class="flex items-center justify-between">
+            <div class="font-bold">Maa <span aria-hidden="true">🌸</span></div>
+                 <button data-who="mom" class="btnTestReminder rounded-2xl bg-white/80 border border-white shadow-sm px-3 py-2 text-sm font-semibold hover:bg-white">Test</button>
+          </div>
+          div class="mt-3 space-y-2" id="reminderFormMom"></div>
+        </div>
+        
+        <div id="reminderDadSection" class="rounded-3xl bg-white/75 backdrop-blur border border-white/80 shadow-sm p-4">
+          <div class="flex items-center justify-between">
+            <div class="font-bold">Papa <span aria-hidden="true">🌷</span></div>
+            <button data-who="dad" class="btnTestReminder rounded-2xl bg-white/80 border border-white shadow-sm px-3 py-2 text-sm font-semibold hover:bg-white">Test</button>
+          </div>
+          <div class="mt-3 space-y-2" id="reminderFormDad"></div>
+        </div>
+        
+        <div class="rounded-3xl bg-white/70 backdrop-blur border border-white/80 shadow-sm p-4">
+          <div class="font-bold">💡 Tip</div>
+          <p class="mt-2 text-sm text-slate-600">Notifications permission dene par hum ek chhota browser notification bhi dikha sakte hain (page open rahe to).</p>
+        </div>
+      </section>
+      
+      <!-- SETTINGS -->
+      <section id="screenSettings" class="hidden space-y-3">
+        <div class="rounded-3xl bg-white/75 backdrop-blur border border-white/80 shadow-sm p-4">
+          <h2 class="text-lg font-extrabold">Settings</h2>
+          <p class="mt-2 text-sm text-slate-600">Voice, emoji style, surprise effects—sab yahin se. "Tanu's voice" ke liye neeche Hindi voice select karein.</p>
+        </div>
+
+        <!-- Voice Selection -->
+        <div class="rounded-3xl bg-white/75 backdrop-blur border border-white/80 shadow-sm p-4 space-y-3">
+          <div>
+            <div class="flex items-center justify-between">
+              <div>
+                <div class="font-bold">Voice (Tanu)</div>
+                <div class="text-xs text-slate-500">Web Speech API (browser dependent)</div>
+              </div>
+              <button id="btnVoiceSample" class="rounded-2xl bg-white/80 border border-white shadow-sm px-3 py-2 text-sm font-semibold hover:bg-white">Sample 🔊</button>
+            </div>
+            <select id="voiceSelect" class="mt-2 w-full rounded-2xl bg-white/80 border border-white shadow-sm px-3 py-2 text-sm"></select>
+            <div class="mt-2 grid grid-cols-2 gap-2">
+              <div class="rounded-2xl bg-white/70 border border-white p-3">
+                <div class="text-xs text-slate-500">Speed</div>
+                <input id="rateRange" type="range" min="0.7" max="1.2" step="0.05" class="mt-2 w-full" />
+                <div class="mt-1 text-xs text-slate-600">Rate: <span id="rateLabel">1</span></div>
+              </div>
+              <div class="rounded-2xl bg-white/70 border border-white p-3">
+                <div class="text-xs text-slate-500">Pitch</div>
+                <input id="pitchRange" type="range" min="0.7" max="1.3" step="0.05" class="mt-2 w-full" />
+                <div class="mt-1 text-xs text-slate-600">Pitch: <span id="pitchLabel">1</span></div>
+              </div>
+            </div>
+          </div>
+         
+         <!-- Prerecorded Voices Section -->
+          <div class="rounded-2xl bg-white/70 border border-white p-3">
+            <div class="flex items-center justify-between">
+              <div class="font-bold">Prerecorded Voices 🎤</div>
+            </div>
+            <p class="mt-2 text-xs text-slate-600">Apni taraf se record kiye gaye voices use karein.</p>
+            <div class="mt-2 space-y-2" id="prerecordedVoicesList"></div>
+            <button id="btnAddVoice" class="mt-2 w-full rounded-2xl bg-white/80 border border-white shadow-sm px-3 py-2 text-sm font-semibold hover:bg-white">➕ Add Prerecorded Voice</button>
+            <button id="btnShareVoices" class="mt-2 w-full rounded-2xl bg-white/80 border border-white shadow-sm px-3 py-2 text-sm font-semibold hover:bg-white">📤 Share Voices</button>
+          </div>
+
+          <div class="rounded-2xl bg-white/70 border border-white p-3">
+            <div class="flex items-center justify-between">
+              <div>
+                <div class="font-bold">Surprise Effects</div>
+                <div class="text-xs text-slate-500">Random "I love you ❤️" pop-ups + particles</div>
+              </div>
+              <button id="toggleSurprise" class="switch" data-on="true" aria-label="Toggle surprise effects"></button>
+            </div>
+            <div class="mt-2">
+              <label class="text-xs text-slate-500">Frequency</label>
+              <select id="popupFreq" class="mt-1 w-full rounded-2xl bg-white/80 border border-white shadow-sm px-3 py-2 text-sm">
+                <option value="off">Off</option>
+                <option value="low">Low (rare)</option>
+                <option value="med">Medium</option>
+                <option value="high">High (often)</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="rounded-2xl bg-white/70 border border-white p-3">
+            <div class="font-bold">Emoji / Graphics Style</div>
+            <div class="mt-2 grid grid-cols-3 gap-2 text-sm">
+              <button data-style="soft" class="btnStyle rounded-2xl bg-white/80 border border-white shadow-sm px-3 py-2 font-semibold hover:bg-white">Soft</button>
+              <button data-style="sparkly" class="btnStyle rounded-2xl bg-white/80 border border-white shadow-sm px-3 py-2 font-semibold hover:bg-white">Sparkly</button>
+              <button data-style="minimal" class="btnStyle rounded-2xl bg-white/80 border border-white shadow-sm px-3 py-2 font-semibold hover:bg-white">Minimal</button>
+            </div>
+            <div class="mt-2 text-xs text-slate-500">Selected: <span id="styleLabel">soft</span></div>
+          </div>
+
+          <div class="rounded-2xl bg-white/70 border border-white p-3">
+            <div class="font-bold">Data</div>
+            <div class="mt-2 flex gap-2">
+              <button id="btnReset" class="flex-1 rounded-2xl bg-white/80 border border-white shadow-sm px-3 py-3 text-sm font-semibold hover:bg-white">Reset</button>
+              <button id="btnStopSpeech" class="flex-1 rounded-2xl bg-white/80 border border-white shadow-sm px-3 py-3 text-sm font-semibold hover:bg-white">Stop Voice</button>
+            </div>
+            <div class="mt-2 text-xs text-slate-500">Sab kuch aapke browser mein local save hota hai (localStorage).</div>
+          </div>
+
+          <!-- Change Role -->
+          <button id="btnChangeRole" class="w-full rounded-2xl bg-gradient-to-r from-slate-400 to-slate-500 text-white px-3 py-3 text-sm font-semibold hover:shadow-md">🔄 Change Role</button>
+        </div>
+      </section>
+    </main>
+    
+    <!-- TAB BAR -->
+    <nav id="tabBar" class="fixed bottom-0 left-0 right-0 border-t border-white/70 bg-white/70 backdrop-blur z-40">
+      <div class="mx-auto max-w-lg grid grid-cols-4 px-2 py-2">
+        <button data-tab="home" class="tabBtn rounded-2xl px-2 py-2 text-xs font-semibold hover:bg-white/70">
+          <div class="text-lg" aria-hidden="true">🏠</div>
+          Home
+        </button>
+        <button data-tab="send" class="tabBtn rounded-2xl px-2 py-2 text-xs font-semibold hover:bg-white/70">
+          <div class="text-lg" aria-hidden="true">💌</div>
+          Send
+        </button>
+        <button data-tab="reminders" class="tabBtn rounded-2xl px-2 py-2 text-xs font-semibold hover:bg-white/70">
+          <div class="text-lg" aria-hidden="true">⏰</div>
+          Reminders
+        </button>
+        <button data-tab="settings" class="tabBtn rounded-2xl px-2 py-2 text-xs font-semibold hover:bg-white/70">
+          <div class="text-lg" aria-hidden="true">⚙️</div>
+          Settings
+        </button>
+      </div>
+    </nav>
+  </div>
+
+  <!-- Toast Container -->
+  <div id="toastRegion" class="fixed top-3 left-0 right-0 z-50 pointer-events-none">
+    <div id="toastContainer" class="mx-auto max-w-lg px-4 space-y-2"></div>
+  </div>
+
+  <!-- Modal Backdrop -->
+  <div id="modalBackdrop" class="fixed inset-0 bg-slate-900/30 backdrop-blur-sm hidden items-end sm:items-center justify-center z-50">
+    <div id="modalCard" class="w-full sm:max-w-md mx-auto rounded-t-3xl sm:rounded-3xl bg-white/90 border border-white shadow-xl p-4 animate-popIn">
+      <div class="flex items-start justify-between gap-3">
+        <div>
+          <div id="modalTitle" class="text-lg font-extrabold">Sandesh</div>
+          <div id="modalSubtitle" class="text-xs text-slate-500">—</div>
+        </div>
+        <button id="btnCloseModal" class="rounded-2xl bg-white/80 border border-white shadow-sm px-3 py-2 text-sm font-semibold hover:bg-white">✕</button>
+      </div>
+
+      <div class="mt-3 rounded-3xl bg-white/70 border border-white p-4">
+        <div class="flex items-center justify-center gap-2">
+          <div id="modalBigEmoji" class="text-4xl animate-heartbeat">💞</div>
+        </div>
+        <p id="modalMessage" class="mt-3 text-slate-800 leading-relaxed"></p>
+      </div>
+
+      <div class="mt-3 grid grid-cols-3 gap-2">
+        <button id="btnModalSpeak" class="rounded-2xl bg-slate-900 text-white px-3 py-3 text-sm font-semibold shadow-sm hover:bg-slate-800">🔊 Sunein</button>
+        <button id="btnModalDone" class="rounded-2xl bg-pink-500 text-white px-3 py-3 text-sm font-semibold shadow-sm hover:bg-pink-600">✅ Done</button>
+        <button id="btnModalMore" class="rounded-2xl bg-white/80 border border-white shadow-sm px-3 py-3 text-sm font-semibold hover:bg-white">✨ Surprise</button>
+      </div>
+
+      <div class="mt-3 text-xs text-slate-500">
+        Tip: agar aawaaz nahin aa rahi, Settings → Voice mein Hindi voice select karein aur Sample chalayen.
+      </div>
+    </div>
+
+    <canvas id="confettiCanvas" width="1" height="1"></canvas>
+  </div>
+
+  <!-- Voice Recording Modal -->
+  <div id="voiceRecordingModal" class="fixed inset-0 bg-slate-900/30 backdrop-blur-sm hidden items-end sm:items-center justify-center z-50">
+    <div class="w-full sm:max-w-md mx-auto rounded-t-3xl sm:rounded-3xl bg-white/90 border border-white shadow-xl p-4 animate-popIn">
+      <h2 class="text-lg font-extrabold">Add Prerecorded Voice 🎤</h2>
+      <p class="mt-2 text-sm text-slate-600">Apni aawaaz record karein (upto 30 secs) ya audio file upload karein.</p>
+
+      <div class="mt-4 space-y-3">
+        <button id="btnStartRecord" class="w-full rounded-2xl bg-red-500 text-white px-4 py-3 text-sm font-semibold hover:bg-red-600">🔴 Record</button>
+        <button id="btnStopRecord" class="w-full rounded-2xl bg-slate-900 text-white px-4 py-3 text-sm font-semibold hover:bg-slate-800 hidden">⏹️ Stop</button>
+        <input id="voiceNameInput" type="text" placeholder="Voice name (e.g., 'Maa call')" class="w-full rounded-2xl bg-white/80 border border-white shadow-sm px-3 py-2 text-sm" />
+        <label class="w-full rounded-2xl bg-white/80 border border-white shadow-sm px-3 py-3 text-sm font-semibold text-center cursor-pointer hover:bg-white">
+          📁 Or upload audio
+          <input id="voiceFileInput" type="file" accept="audio/*" class="hidden" />
+        </label>
+        <button id="btnSaveVoiceRecording" class="w-full rounded-2xl bg-pink-500 text-white px-4 py-3 text-sm font-semibold hover:bg-pink-600">💾 Save</button>
+        <button id="btnCloseVoiceModal" class="w-full rounded-2xl bg-white/80 border border-white shadow-sm px-3 py-3 text-sm font-semibold hover:bg-white">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+  // Global state for recording
+    let mediaRecorder = null;
+    let recordedChunks = [];
+
+    // -------- Utilities --------
+    const $ = (sel, root=document) => root.querySelector(sel);
+    const $$ = (sel, root=document) => Array.from(root.querySelectorAll(sel));
+
+    function clamp(n, a, b){ return Math.max(a, Math.min(b, n)); }
+
+    function todayKey(){
+      const d = new Date();
+      const yyyy = d.getFullYear();
+      const mm = String(d.getMonth()+1).padStart(2,'0');
+      const dd = String(d.getDate()).padStart(2,'0');
+      return `${yyyy}-${mm}-${dd}`;
+    }
+
+    function pad2(n){ return String(n).padStart(2,'0'); }
+
+    function formatTime(t){
+      if (!t) return '—';
+      const [h,m] = t.split(':').map(Number);
+      const ampm = h >= 12 ? 'PM' : 'AM';
+      const hh = ((h + 11) % 12) + 1;
+      return `${hh}:${pad2(m)} ${ampm}`;
+    }
+    
+    function seededRand(seedStr){
+      let h = 1779033703 ^ seedStr.length;
+      for (let i=0;i<seedStr.length;i++) {
+        h = Math.imul(h ^ seedStr.charCodeAt(i), 3432918353);
+        h = (h << 13) | (h >>> 19);
+      }
+      h = Math.imul(h ^ (h >>> 16), 2246822507);
+      h = Math.imul(h ^ (h >>> 13), 3266489909);
+      h ^= (h >>> 16);
+      let a = h >>> 0;
+      return function(){
+        a += 0x6D2B79F5;
+        let t = a;
+        t = Math.imul(t ^ (t >>> 15), t | 1);
+        t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+      };
+    }
+
+    function humanSlotName(slot){
+      return ({morning:'Subah',afternoon:'Dopahar',evening:'Shaam',night:'Raat'})[slot] || slot;
+    }
+
+    function nowHM(){
+      const d = new Date();
+      return `${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
+    }
+
+    function nextOccurrenceTime(timeHHMM){
+    if (!timeHHMM) return null;
+      const [h,m] = timeHHMM.split(':').map(Number);
+      const now = new Date();
+      const d = new Date(now);
+      d.setSeconds(0,0);
+      d.setHours(h,m,0,0);
+      if (d.getTime() <= now.getTime()) d.setDate(d.getDate()+1);
+      return d;
+    }
+
+    function msToHuman(ms){
+      ms = Math.max(0, ms);
+      const min = Math.floor(ms/60000);
+      const hr = Math.floor(min/60);
+      const m = min%60;
+      if (hr<=0) return `${m}m`;
+      return `${hr}h ${m}m`;
+    }
+
+    function toast(msg, kind='info', ttl=3600){
+      const box = document.createElement('div');
+      const base = "rounded-2xl border border-white/70 shadow-sm bg-white/80 backdrop-blur px-3 py-2 text-sm pointer-events-auto";
+      const color = kind==='ok' ? 'text-emerald-800' : kind==='warn' ? 'text-amber-800' : kind==='err' ? 'text-rose-800' : 'text-slate-800';
+      box.className = `${base} ${color}`;
+      box.style.animation = 'toastIn .18s ease-out both';
+      box.textContent = msg;
+      $('#toastContainer').appendChild(box);
+      setTimeout(() => {
+        box.style.animation = 'toastOut .18s ease-in both';
+        setTimeout(()=> box.remove(), 220);
+      }, ttl);
+    }
+
+    // -------- Default content --------
+    const PRESET_MOM = [
+      "Maa, aaj thoda aaraam bhi kar lena ❤️",
+      "Maa, aapki muskaan hi meri taakat hai 🌸",
+      "Maa, paani peeti rehna 💧💖",
+      "Maa, aapne jo pyaar diya hai… usi se mera din banta hai 🫶",
+      "Maa, dhyaan rakhna — main hamesha aapke saath hoon 👶✨",
+      "Maa, aapka khayaal rakhna mere liye sabse zaroori hai 💗",
+      "Maa, aaj kuch pasand ka kha lena 🍲🌸",
+      "Maa, aapne mere liye bahut kiya hai… main aapse bahut pyaar karti/karta hoon ❤️"
+    ];
+
+    const PRESET_DAD = [
+      "Papa, aaj thoda aaraam bhi kar lena 🌷",
+      "Papa, aapka saath mere liye sabse bada sahaara hai ⭐",
+      "Papa, apna khayaal rakhna — aap bahut keemti ho ❤️",
+      "Papa, paani peete rehna 💧",
+      "Papa, aapki mehnat ke liye dhanyavaad 🙏⭐",
+      "Papa, aaj khush rehna… bas yahi chahiye 🌷❤️",
+      "Papa, muskura dena — sab achha lagega 😄⭐",
+      "Papa, aap mere hero ho 🦸⭐"
+    ];
+
+    const SURPRISE_POPUPS = [
+      "I love you ❤️",
+      "Aap dono bahut pyaare ho 🫶",
+      "Aaj bhi dhanyavaad… aapke pyaar ke liye 🌸",
+      "Bas yaad aaya: aap mera sab kuch ho 💗",
+      "Ek chhota sa hug 🤗❤️",
+      "Aapka khayaal rakhna… hamesha ✨"
+    ];
+
+    const VARIATIONS_PREFIX = [
+      "Aaj bas yahi kehna tha… ",
+      "Ek pyaari-si baat… ",
+      "Dil se… ",
+      "Bas yaad aaya… ",
+      "Meri taraf se… ",
+      "Thoda sa pyaar… "
+    ];
+
+    const VARIATIONS_SUFFIX = [
+      " \n\n(Main hamesha aapke saath hoon) 💞",
+      " \n\nKhush rehna 🤗",
+      " \n\nLove you ❤️",
+      " \n\nAapko dher saara pyaar 🫶",
+      " \n\nAaj bhi muskurate rehna ✨"
+    ];
+
+    // -------- State --------
+    const STORAGE_KEY = 'dilse_v1';
+    const ROLE_STORAGE_KEY = 'dilse_role_v1';
+    const VOICES_STORAGE_KEY = 'dilse_voices_v1';
+
+    const defaultState = {
+      version: 1,
+      voiceURI: '',
+      rate: 1.0,
+      pitch: 1.0,
+      emojiStyle: 'soft',
+      surpriseOn: true,
+      popupFreq: 'med',
+      variationOn: true,
+      coins: 0,
+      streak: { count: 0, lastDoneDate: '' },
+      lastTriggered: {},
+      rotation: {
+        mom: [...PRESET_MOM, "Maa, dhyaan rakhna ❤️", "Maa, apna bhi khayaal rakhna 🌸"],
+        dad: [...PRESET_DAD, "Papa, khud ka khayaal rakhna 🌷", "Papa, aaraam bhi zaroori hai ❤️⭐"]
+      },
+      schedules: {
+        mom: {
+          morning: { time: '08:30', enabled: true },
+          afternoon: { time: '13:00', enabled: true },
+          evening: { time: '18:30', enabled: true },
+          night: { time: '21:30', enabled: true },
+        },
+        dad: {
+          morning: { time: '09:00', enabled: true },
+          afternoon: { time: '13:30', enabled: true },
+          evening: { time: '19:00', enabled: true },
+          night: { time: '22:00', enabled: true },
+        }
+      },
+      lastModal: null,
+      notificationsAsked: false,
+      prerecordedVoices: {}
+    };
+
+    let state = null;
+    let currentRole = null; // 'admin', 'mom', 'dad'
+    let voices = [];
+    let schedulerTimer = null;
+    let surpriseTimer = null;
+
+    // -------- Persistence --------
+    function deepMerge(a, b){
+      if (typeof a !== 'object' || a === null) return b;
+      if (typeof b !== 'object' || b === null) return a;
+      const out = Array.isArray(a) ? [...a] : { ...a };
+      for (const k of Object.keys(b)) {
+        if (Array.isArray(b[k])) out[k] = [...b[k]];
+        else if (typeof b[k] === 'object' && b[k] !== null) out[k] = deepMerge(out[k], b[k]);
+        else out[k] = b[k];
+      }
+      return out;
+    }
+
+    function loadState(){
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return structuredClone(defaultState);
+      try {
+        const parsed = JSON.parse(raw);
+        return deepMerge(structuredClone(defaultState), parsed);
+      } catch (e) {
+        return structuredClone(defaultState);
+      }
+    }
+
+    function saveState(){
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      renderStats();
+      renderHome();
+      setupSurpriseLoop();
+    }
+
+    function loadRole(){
+      const r = localStorage.getItem(ROLE_STORAGE_KEY);
+      return r || null;
+    }
+
+    function saveRole(role){
+      localStorage.setItem(ROLE_STORAGE_KEY, role);
+      currentRole = role;
+    }
+    
+    function loadPrerecordedVoices(){
+      const raw = localStorage.getItem(VOICES_STORAGE_KEY);
+      if (!raw) return {};
+      try {
+        return JSON.parse(raw);
+      } catch (e) {
+        return {};
+      }
+    }
+
+    function savePrerecordedVoices(voices){
+      localStorage.setItem(VOICES_STORAGE_KEY, JSON.stringify(voices));
+      state.prerecordedVoices = voices;
+    }
+
+    // -------- Voice (TTS) --------
+    function refreshVoices(){
+      voices = window.speechSynthesis ? window.speechSynthesis.getVoices() : [];
+      renderVoiceSelect();
+    }
+
+    function guessDefaultVoiceURI(){
+      if (!voices || voices.length === 0) return '';
+      const hindi = voices.filter(v => (v.lang||'').toLowerCase().startsWith('hi'));
+      const pick = (arr) => arr.find(v => /female|mahila|woman|girl/i.test(v.name)) || arr[0];
+      const v = hindi.length ? pick(hindi) : (voices.find(v => v.default) || voices[0]);
+      return v?.voiceURI || '';
+    }
+
+    function getSelectedVoice(){
+      if (!voices || voices.length === 0) return null;
+      const v = voices.find(v => v.voiceURI === state.voiceURI);
+      return v || voices.find(v => v.default) || voices[0] || null;
+    }
+
+    function speak(text){
+      if (!('speechSynthesis' in window)) {
+        toast('Is browser mein Text-to-Speech supported nahin hai.', 'warn', 4000);
+        return;
+      }
+      const cleaned = (text || '').trim();
+      if (!cleaned) {
+        toast('Pehle koi sandesh likhein.', 'warn');
+        return;
+      }
+      window.speechSynthesis.cancel();
+      const u = new SpeechSynthesisUtterance(cleaned);
+      const v = getSelectedVoice();
+      if (v) u.voice = v;
+      u.rate = clamp(Number(state.rate || 1), 0.7, 1.2);
+      u.pitch = clamp(Number(state.pitch || 1), 0.7, 1.3);
+      u.lang = v?.lang || 'hi-IN';
+      window.speechSynthesis.speak(u);
+    }
+
+    function stopSpeech(){
+      if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+    }
+
+    function renderVoiceSelect(){
+      const sel = $('#voiceSelect');
+      if (!sel) return;
+      sel.innerHTML = '';
+
+      if (!('speechSynthesis' in window)) {
+        const opt = document.createElement('option');
+        opt.value = '';
+        opt.textContent = 'TTS unsupported';
+        sel.appendChild(opt);
+        sel.disabled = true;
+        return;
+      }
+
+      const groups = [
+        { label: 'Hindi (Recommended)', filter: (v) => (v.lang||'').toLowerCase().startsWith('hi') },
+        { label: 'Other voices', filter: (v) => !(v.lang||'').toLowerCase().startsWith('hi') },
+      ];
+
+      for (const g of groups) {
+        const opts = voices.filter(g.filter);
+        if (!opts.length) continue;
+        const og = document.createElement('optgroup');
+        og.label = g.label;
+        for (const v of opts) {
+          const opt = document.createElement('option');
+          opt.value = v.voiceURI;
+          opt.textContent = `${v.name} — ${v.lang}${v.default ? ' (default)' : ''}`;
+          og.appendChild(opt);
+        }
+        sel.appendChild(og);
+      }
+
+      if (!state.voiceURI) {
+        state.voiceURI = guessDefaultVoiceURI();
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      }
+
+      sel.value = state.voiceURI;
+      sel.disabled = false;
+    }
+
+// -------- Message generation --------
+    function styleEmojis(who){
+
+const base = who === 'mom'
+        ? ['🌸','💖','👶','✨','🫶','💗']
+        : ['🌷','❤️','⭐','✨','🙏','🫶'];
+      if (state.emojiStyle === 'minimal') return base.slice(0,3);
+      if (state.emojiStyle === 'sparkly') return [...base, '✨','💫','🌟'];
+      return base;
+    }
+
+    function pickRotationMessage(who, seedKey){
+      const list = (state.rotation?.[who] || []).filter(Boolean);
+      const fallback = who === 'mom' ? PRESET_MOM : PRESET_DAD;
+      const arr = list.length ? list : fallback;
+      const r = seededRand(seedKey);
+      const idx = Math.floor(r() * arr.length);
+      return arr[idx];
+    }
+
+    function varyMessage(base, who, seedKey){
+      if (!state.variationOn) return base;
+      const r = seededRand(seedKey + '::v');
+      const prefix = VARIATIONS_PREFIX[Math.floor(r()*VARIATIONS_PREFIX.length)];
+      const suffix = VARIATIONS_SUFFIX[Math.floor(r()*VARIATIONS_SUFFIX.length)];
+      const emojis = styleEmojis(who);
+      const extra = emojis[Math.floor(r()*emojis.length)] || '💞';
+      const keepSubtle = base.replace(/[^\p{Extended_Pictographic}]/gu,'').length >= 3;
+      const addExtra = state.emojiStyle === 'minimal' ? '' : (keepSubtle ? '' : ` ${extra}`);
+      return `${prefix}${base}${addExtra}${suffix}`;
+    }
+
+    function getTodayMessage(who){
+    const base = pickRotationMessage(who, seed);
+      return varyMessage(base, who, seed);
+    }
+
+    function getScheduledMessage(who, slot){
+      const seed = `${todayKey()}::${who}::${slot}::${nowHM()}`;
+      const base = pickRotationMessage(who, seed);
+      return varyMessage(base, who, seed);
+    }
+
+    // -------- Particles, Confetti, Sound --------
+    function playChime(){
+      try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const t0 = ctx.currentTime;
+        const o = ctx.createOscillator();
+        const g = ctx.createGain();
+        o.type = 'sine';
+        o.frequency.setValueAtTime(880, t0);
+        o.frequency.exponentialRampToValueAtTime(1320, t0 + 0.08);
+        g.gain.setValueAtTime(0.0001, t0);
+        g.gain.exponentialRampToValueAtTime(0.18, t0 + 0.02);
+        g.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.18);
+        o.connect(g); g.connect(ctx.destination);
+        o.start(t0); o.stop(t0+0.2);
+        setTimeout(() => ctx.close?.(), 450);
+      } catch (e) {
+        // ignore
+      }
+    }
+
+    function burstParticles(type, count=22){
+      if (!state.surpriseOn) return;
+      const region = document.body;
+      const emojisByType = {
+        hearts: ['💖','💗','💞','❤️','🫶'],
+        stars: ['⭐','🌟','💫','✨'],
+        flowers: ['🌸','🌷','🌼','💐'],
+        sparkles: ['✨','💫','🌟'],
+        confetti: ['🎊','🎉','✨','💖']
+      };
+      const options = emojisByType[type] || emojisByType.sparkles;
+      for (let i=0; i<count; i++){
+        const p = document.createElement('div');
+        p.className = 'particle text-2xl';
+        const left = Math.random()*90 + 5;
+        const dur = Math.random()*900 + 900;
+        const x0 = (Math.random()*20 - 10) + 'px';
+        const x1 = (Math.random()*120 - 60) + 'px';
+        p.style.setProperty('--left', left + 'vw');
+        p.style.setProperty('--dur', dur + 'ms');
+        p.style.setProperty('--x0', x0);
+        p.style.setProperty('--x1', x1);
+        p.textContent = options[Math.floor(Math.random()*options.length)];
+        region.appendChild(p);
+        setTimeout(()=>p.remove(), dur + 30);
+      }
+    }
+
+    function confettiBurst(durationMs=900){
+      if (!state.surpriseOn) return;
+      const canvas = $('#confettiCanvas');
+      const ctx = canvas.getContext('2d');
+      const dpr = Math.max(1, Math.min(2, window.devicePixelRatio || 1));
+      canvas.width = Math.floor(window.innerWidth * dpr);
+      canvas.height = Math.floor(window.innerHeight * dpr);
+      canvas.style.width = window.innerWidth + 'px';
+      canvas.style.height = window.innerHeight + 'px';
+      ctx.setTransform(dpr,0,0,dpr,0,0);
+
+      const colors = ['#fb7185','#f472b6','#a855f7','#60a5fa','#34d399','#fbbf24'];
+      const pieces = Array.from({length: 120}).map(() => ({
+        x: Math.random()*window.innerWidth,
+        y: -20 - Math.random()*window.innerHeight*0.3,
+        vx: (Math.random()*2-1) * 2.2,
+        vy: 2 + Math.random()*4,
+        w: 4 + Math.random()*6,
+        h: 7 + Math.random()*10,
+        rot: Math.random()*Math.PI,
+        vr: (Math.random()*2-1) * 0.12,
+        c: colors[Math.floor(Math.random()*colors.length)]
+      }));
+
+      const tStart = performance.now();
+      function frame(t){
+        const elapsed = t - tStart;
+        ctx.clearRect(0,0,window.innerWidth, window.innerHeight);
+        for (const p of pieces){
+          p.x += p.vx;
+          p.y += p.vy;
+          p.rot += p.vr;
+          p.vy += 0.02;
+          ctx.save();
+          ctx.translate(p.x, p.y);
+          ctx.rotate(p.rot);
+          ctx.fillStyle = p.c;
+          ctx.fillRect(-p.w/2, -p.h/2, p.w, p.h);
+          ctx.restore();
+        }
+        if (elapsed < durationMs) requestAnimationFrame(frame);
+        else ctx.clearRect(0,0,window.innerWidth, window.innerHeight);
+      }
+      requestAnimationFrame(frame);
+    }
+
+    // -------- Modal --------
+    function openModal({title, subtitle, message, bigEmoji='💞', who=null, effect='sparkles', slot=null}){
+      state.lastModal = { title, subtitle, message, bigEmoji, who, effect, slot, at: Date.now() };
+      saveState();
+
+      $('#modalTitle').textContent = title;
+      $('#modalSubtitle').textContent = subtitle || '';
+      $('#modalMessage').textContent = message;
+      $('#modalBigEmoji').textContent = bigEmoji;
+
+      $('#modalBackdrop').classList.remove('hidden');
+      $('#modalBackdrop').classList.add('flex');
+
+      playChime();
+      if (effect === 'confetti') confettiBurst(900);
+      burstParticles(effect, 22);
+
+      maybeBrowserNotify(title, message);
+    }
+
+    function closeModal(){
+      $('#modalBackdrop').classList.add('hidden');
+      $('#modalBackdrop').classList.remove('flex');
+      stopSpeech();
+    }
+
+    function modalSurprise(){
+      const types = ['hearts','sparkles','flowers','confetti','stars'];
+      const e = types[Math.floor(Math.random()*types.length)];
+      if (e === 'confetti') confettiBurst(900);
+      burstParticles(e, 34);
+      toast('✨ Surprise!', 'ok', 1400);
+    }
+
+    function markDone(){
+      state.coins = (state.coins || 0) + 1;
+      const t = todayKey();
+      if (state.streak.lastDoneDate !== t) {
+        const last = state.streak.lastDoneDate;
+        const y = new Date();
+        y.setDate(y.getDate()-1);
+        const yk = `${y.getFullYear()}-${pad2(y.getMonth()+1)}-${pad2(y.getDate())}`;
+        state.streak.count = (last === yk) ? (state.streak.count + 1) : 1;
+        state.streak.lastDoneDate = t;
+      }
+      saveState();
+      confettiBurst(900);
+      burstParticles('hearts', 26);
+      toast('Done ✅ Love +1', 'ok', 1800);
+      closeModal();
+    }
+
+    // -------- Notifications --------
+    async function askNotifications(){
+      if (!('Notification' in window)) {
+        toast('Is browser mein Notifications supported nahin hain.', 'warn', 3500);
+        return;
+      }
+      try {
+        const p = await Notification.requestPermission();
+        state.notificationsAsked = true;
+        saveState();
+        if (p === 'granted') toast('Notifications enabled ✅', 'ok');
+        else toast('Notifications permission nahin mili. (in-app pop-up phir bhi chalega)', 'warn', 4500);
+      } catch(e){
+        toast('Notifications request fail hua.', 'err');
+      }
+    }
+
+    function maybeBrowserNotify(title, body){
+      if (!('Notification' in window)) return;
+      if (Notification.permission !== 'granted') return;
+      try {
+        new Notification(title, { body, silent: true });
+      } catch(e){
+        // ignore
+      }
+    }
+
+    // -------- Scheduler --------
+    function getNextEnabledSlot(who){
+      const sched = state.schedules[who];
+      const candidates = Object.entries(sched)
+        .filter(([,v]) => v?.enabled && v?.time)
+        .map(([slot,v]) => ({slot, time: v.time, at: nextOccurrenceTime(v.time)}))
+        .filter(x => x.at);
+      if (!candidates.length) return null;
+      candidates.sort((a,b)=>a.at-b.at);   
+ return candidates[0];
+    }
+
+    function triggerReminder(who, slot, from='schedule'){
+      const whoLabel = who === 'mom' ? 'Maa' : 'Papa';
+      const bigEmoji = who === 'mom' ? '💞' : '⭐';
+      const message = getScheduledMessage(who, slot);
+      const subtitle = `${whoLabel} • ${humanSlotName(slot)} • ${formatTime(state.schedules[who][slot]?.time || '')}`;
+      const effect = pickEffectForWho(who);
+      openModal({
+        title: `${whoLabel} ke liye pyaara sandesh`,
+        subtitle,
+        message,
+        bigEmoji,
+        who,
+        effect,
+        slot
+      });
+    }
+
+    function pickEffectForWho(who){
+      if (state.emojiStyle === 'minimal') return who === 'mom' ? 'hearts' : 'stars';
+      if (state.emojiStyle === 'sparkly') return 'sparkles';
+      return who === 'mom' ? 'flowers' : 'stars';
+    }
+
+    function checkSchedules(){
+      const hm = nowHM();
+      const day = todayKey();
+
+      for (const who of ['mom','dad']) {
+        const sched = state.schedules[who];
+        for (const slot of Object.keys(sched)) {
+          const item = sched[slot];
+          if (!item?.enabled || !item?.time) continue;
+          if (item.time !== hm) continue;
+
+          const key = `${day}::${who}::${slot}::${hm}`;
+          if (state.lastTriggered[key]) continue;
+          state.lastTriggered[key] = true;
+          saveState();
+
+          triggerReminder(who, slot);
+        }
+      }
+    }
+
+    function startScheduler(){
+      if (schedulerTimer) clearInterval(schedulerTimer);
+      schedulerTimer = setInterval(checkSchedules, 20 * 1000);
+      checkSchedules();
+    }
+
+    // -------- Surprise loop --------
+    function freqToMs(freq){
+      if (!state.surpriseOn) return Infinity;
+      if (freq === 'off') return Infinity;
+      if (freq === 'low') return 1000 * 60 * (18 + Math.random()*12);
+      if (freq === 'high') return 1000 * 60 * (5 + Math.random()*5);
+      return 1000 * 60 * (10 + Math.random()*10);
+    }
+
+    function setupSurpriseLoop(){
+      if (surpriseTimer) clearTimeout(surpriseTimer);
+      const t = freqToMs(state.popupFreq);
+      if (!isFinite(t)) return;
+      surpriseTimer = setTimeout(() => {
+        const msg = SURPRISE_POPUPS[Math.floor(Math.random()*SURPRISE_POPUPS.length)];
+        toast(msg, 'ok', 2400);
+        burstParticles('sparkles', 12);
+        setupSurpriseLoop();
+      }, t);
+    }
+
+    // -------- Rendering --------
+    function renderStats(){
+      $('#statCoins').textContent = String(state.coins || 0);
+      $('#statStreak').textContent = String(state.streak?.count || 0);
+      $('#toggleSurpriseMini').dataset.on = String(!!state.surpriseOn);
+    }
+
+    function renderHome(){
+      $('#todayMom').textContent = getTodayMessage('mom');
+      $('#todayDad').textContent = getTodayMessage('dad');
+
+      const nMom = getNextEnabledSlot('mom');
+      const nDad = getNextEnabledSlot('dad');
+      $('#nextMom').textContent = nMom ? `${humanSlotName(nMom.slot)} • ${formatTime(nMom.time)} (in ${msToHuman(nMom.at - new Date())})` : 'Off';
+      $('#nextDad').textContent = nDad ? `${humanSlotName(nDad.slot)} • ${formatTime(nDad.time)} (in ${msToHuman(nDad.at - new Date())})` : 'Off';
+
+      $('#homeScheduleMom').textContent = scheduleSummary('mom');
+      $('#homeScheduleDad').textContent = scheduleSummary('dad');
+
+      $('#toggleSurpriseMini').dataset.on = String(!!state.surpriseOn);
+      $('#toggleSurprise').dataset.on = String(!!state.surpriseOn);
+      $('#toggleVariation').dataset.on = String(!!state.variationOn);
+
+      $('#popupFreq').value = state.popupFreq || 'med';
+      $('#styleLabel').textContent = state.emojiStyle || 'soft';
+    }
+
+    function scheduleSummary(who){
+      const s = state.schedules[who];
+      const rows = [];
+      for (const slot of ['morning','afternoon','evening','night']) {
+        const item = s[slot];
+        if (item.enabled) rows.push(`${humanSlotName(slot)} ${formatTime(item.time)}`);
+      }
+      return rows.length ? rows.join(' • ') : 'Off';
+    }
+
+    function renderRemindersForm(){
+      const makeRow = (who, slot) => {
+        const item = state.schedules[who][slot];
+        const row = document.createElement('div');
+        row.className = 'rounded-2xl bg-white/70 border border-white p-3 flex items-center justify-between gap-3';
+
+        const left = document.createElement('div');
+        left.className = 'min-w-0';
+        left.innerHTML = `<div class="font-semibold">${humanSlotName(slot)}</div><div class="text-xs text-slate-500">${who==='mom'?'🌸':'🌷'} ${slot}</div>`;
+
+        const right = document.createElement('div');
+        right.className = 'flex items-center gap-2';
+
+        const time = document.createElement('input');
+        time.type = 'time';
+        time.value = item.time;
+        time.className = 'rounded-xl bg-white/90 border border-white px-2 py-2 text-sm shadow-sm';
+        time.dataset.who = who;
+        time.dataset.slot = slot;
+        time.addEventListener('change', () => {
+          state.schedules[who][slot].time = time.value;
+          saveState();
+        });
+
+        const sw = document.createElement('button');
+        sw.className = 'switch';
+        sw.dataset.on = String(!!item.enabled);
+        sw.setAttribute('aria-label', `${who} ${slot} enabled`);
+        sw.addEventListener('click', () => {
+          const on = !(state.schedules[who][slot].enabled);
+          state.schedules[who][slot].enabled = on;
+          sw.dataset.on = String(on);
+          saveState();
+        });
+
+        right.appendChild(time);
+        right.appendChild(sw);
+
+        row.appendChild(left);
+        row.appendChild(right);
+        return row;
+      };
+
+      const mom = $('#reminderFormMom');
+      const dad = $('#reminderFormDad');
+      mom.innerHTML = '';
+      dad.innerHTML = '';
+      for (const slot of ['morning','afternoon','evening','night']) {
+      mom.appendChild(makeRow('mom', slot));
+        dad.appendChild(makeRow('dad', slot));
+      }
+    }
+
+    function renderPresets(){
+      const renderChips = (root, list, who) => {
+        root.innerHTML = '';
+        for (const msg of list) {
+          const b = document.createElement('button');
+          b.className = 'shrink-0 rounded-2xl bg-white/80 border border-white shadow-sm px-3 py-2 text-sm hover:bg-white active:scale-[.99]';
+          b.textContent = msg;
+          b.addEventListener('click', () => {
+            const input = who === 'mom' ? $('#inputMom') : $('#inputDad');
+            input.value = msg;
+            burstParticles(who==='mom' ? 'flowers' : 'stars', 10);
+          });
+          root.appendChild(b);
+        }
+      };
+      renderChips($('#presetMom'), PRESET_MOM.slice(0,7), 'mom');
+      renderChips($('#presetDad'), PRESET_DAD.slice(0,7), 'dad');
+    }
+
+    function renderPrerecordedVoices(){
+      const root = $('#prerecordedVoicesList');
+      root.innerHTML = '';
+      const voices = state.prerecordedVoices || {};
+      for (const [id, voice] of Object.entries(voices)) {
+        const item = document.createElement('div');
+        item.className = 'rounded-2xl bg-white/80 border border-white p-3 flex items-center justify-between gap-2';
+        
+        const label = document.createElement('div');
+        label.className = 'flex-1 min-w-0';
+        label.innerHTML = `<div class="text-sm font-semibold truncate">${voice.name}</div><div class="text-xs text-slate-500">${Math.round(voice.duration/1000)}s</div>`;
+
+        const play = document.createElement('button');
+        play.className = 'rounded-xl bg-white/90 border border-white px-2 py-1 text-xs font-semibold hover:bg-white';
+        play.textContent = '▶️';
+        play.addEventListener('click', () => {
+          if (voice.audioData) {
+            const audio = new Audio(voice.audioData);
+            audio.play();
+          }
+        });
+
+        const del = document.createElement('button');
+        del.className = 'rounded-xl bg-rose-200/70 border border-rose-300 px-2 py-1 text-xs font-semibold hover:bg-rose-300';
+        del.textContent = '✕';
+        del.addEventListener('click', () => {
+          delete voices[id];
+          savePrerecordedVoices(voices);
+          renderPrerecordedVoices();
+          toast('Voice deleted', 'ok', 1500);
+        });
+
+        item.appendChild(label);
+        item.appendChild(play);
+        item.appendChild(del);
+        root.appendChild(item);
+      }
+    }
+
+    function updateRoleUI(){
+      // Show/hide sections based on role
+      if (currentRole === 'admin') {
+        $('#momCardHome').classList.remove('hidden');
+        $('#dadCardHome').classList.remove('hidden');
+        $('#sendMomCard').classList.remove('hidden');
+        $('#sendDadCard').classList.remove('hidden');
+        $('#reminderMomSection').classList.remove('hidden');
+        $('#reminderDadSection').classList.remove('hidden');
+        $('#scheduleGridMom').classList.remove('hidden');
+        $('#scheduleGridDad').classList.remove('hidden');
+        $('#headerSubtitle').textContent = 'Admin - Maa-Papa ke liye har din pyaar bhara sandesh';
+      } else if (currentRole === 'mom') {
+        $('#momCardHome').classList.remove('hidden');
+        $('#dadCardHome').classList.add('hidden');
+        $('#sendMomCard').classList.remove('hidden');
+        $('#sendDadCard').classList.add('hidden');
+        $('#reminderMomSection').classList.remove('hidden');
+        $('#reminderDadSection').classList.add('hidden');
+        $('#scheduleGridMom').classList.remove('hidden');
+        $('#scheduleGridDad').classList.add('hidden');
+        $('#headerSubtitle').textContent = 'Maa - Aapke liye pyaar aur khayaal';
+      } else if (currentRole === 'dad') {
+        $('#momCardHome').classList.add('hidden');
+        $('#dadCardHome').classList.remove('hidden');
+        $('#sendMomCard').classList.add('hidden');
+        $('#sendDadCard').classList.remove('hidden');
+        $('#reminderMomSection').classList.add('hidden');
+        $('#reminderDadSection').classList.remove('hidden');
+        $('#scheduleGridMom').classList.add('hidden');
+        $('#scheduleGridDad').classList.remove('hidden');
+        $('#headerSubtitle').textContent = 'Papa - Aapke liye pyaar aur sammaan';
+      }
+    }
+
+    function setActiveTab(tab){
+      const map = {
+        home: '#screenHome',
+        send: '#screenSend',
+        reminders: '#screenReminders',
+        settings: '#screenSettings'
+      };
+      for (const [k, sel] of Object.entries(map)) {
+        $(sel).classList.toggle('hidden', k !== tab);
+      }
+      $$('.tabBtn').forEach(btn => {
+        const on = btn.dataset.tab === tab;
+        btn.classList.toggle('bg-white/80', on);
+        btn.classList.toggle('shadow-sm', on);
+      });
+
+if (tab === 'settings') {
+        refreshVoices();
+        renderPrerecordedVoices();
+      }
+    }
+
+    // -------- Export/Import --------
+    function exportData(){
+      const blob = new Blob([JSON.stringify(state, null, 2)], {type: 'application/json'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `dilse-backup-${todayKey()}.json`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+      toast('Export ready ✅', 'ok', 2000);
+    }
+
+    async function shareData(){
+      const payload = {
+        title: 'Dil se ❤️',
+        text: 'Yahan mera "Dil se" backup hai (JSON). Ise doosre phone mein Import kar sakte hain.',
+      };
+      try {
+        if (!navigator.share) {
+          toast('Share API unsupported — Export karke bhejein.', 'warn', 3500);
+          exportData();
+          return;
+        }
+        const blob = new Blob([JSON.stringify(state, null, 2)], {type: 'application/json'});
+        const file = new File([blob], `dilse-backup-${todayKey()}.json`, {type: 'application/json'});
+        await navigator.share({ ...payload, files: [file] });
+        toast('Shared ✅', 'ok');
+      } catch(e) {
+        toast('Share canceled / failed. Export kar diya.', 'warn', 3500);
+        exportData();
+      }
+    }
+
+    function importData(file){
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        try {
+          const parsed = JSON.parse(String(reader.result || ''));
+          state = deepMerge(structuredClone(defaultState), parsed);
+          saveState();
+          renderAll();
+          toast('Import successful ✅', 'ok', 2200);
+        } catch(e) {
+          toast('Import failed (invalid JSON).', 'err', 4000);
+        }
+      };
+      reader.readAsText(file);
+    }
+
+    // -------- Voice Recording --------
+    async function startRecording(){
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        mediaRecorder = new MediaRecorder(stream);
+        recordedChunks = [];
+
+        mediaRecorder.ondataavailable = (e) => {
+          recordedChunks.push(e.data);
+        };
+
+        mediaRecorder.onstop = () => {
+          const blob = new Blob(recordedChunks, { type: 'audio/wav' });
+          const reader = new FileReader();
+          reader.onload = () => {
+            const audioData = reader.result;
+            const name = ($('#voiceNameInput').value || 'Voice').trim();
+            const voiceObj = {
+              name: name || 'Voice',
+              audioData: audioData,
+              duration: blob.size * 8 / (16 * 44100) * 1000 // rough estimate
+            };
+            const voicesMap = state.prerecordedVoices || {};
+            const id = Date.now() + '_' + Math.random().toString(36).slice(2,9);
+            voicesMap[id] = voiceObj;
+            savePrerecordedVoices(voicesMap);
+            renderPrerecordedVoices();
+            toast('Voice saved ✅', 'ok', 1800);
+            closeVoiceRecordingModal();
+          };
+          reader.readAsDataURL(blob);
+          stream.getTracks().forEach(track => track.stop());
+        };
+
+        mediaRecorder.start();
+        $('#btnStartRecord').classList.add('hidden');
+        $('#btnStopRecord').classList.remove('hidden');
+        toast('Recording started 🎤', 'ok', 1500);
+      } catch (e) {
+        toast('Microphone access denied.', 'err', 3000);
+      }
+    }
+
+    function stopRecording(){
+      if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+        mediaRecorder.stop();
+        $('#btnStartRecord').classList.remove('hidden');
+        $('#btnStopRecord').classList.add('hidden');
+        toast('Recording stopped', 'ok', 1500);
+      }
+    }
+
+    function openVoiceRecordingModal(){
+      $('#voiceRecordingModal').classList.remove('hidden');
+      $('#voiceRecordingModal').classList.add('flex');
+      $('#voiceNameInput').value = '';
+      recordedChunks = [];
+    }
+
+    function closeVoiceRecordingModal(){
+    $('#voiceRecordingModal').classList.add('hidden');
+      $('#voiceRecordingModal').classList.remove('flex');
+      if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+        mediaRecorder.stop();
+      }
+      $('#btnStartRecord').classList.remove('hidden');
+      $('#btnStopRecord').classList.add('hidden');
+    }
+
+    // -------- Events --------
+    function bindEvents(){
+      // Role setup
+      $('#btnRoleAdmin').addEventListener('click', () => {
+        saveRole('admin');
+        $('#roleSetupModal').classList.add('hidden');
+        $('#roleSetupModal').classList.remove('flex');
+        updateRoleUI();
+      });
+      $('#btnRoleMom').addEventListener('click', () => {
+        saveRole('mom');
+        $('#roleSetupModal').classList.add('hidden');
+        $('#roleSetupModal').classList.remove('flex');
+        updateRoleUI();
+      });
+      $('#btnRoleDad').addEventListener('click', () => {
+        saveRole('dad');
+        $('#roleSetupModal').classList.add('hidden');
+        $('#roleSetupModal').classList.remove('flex');
+        updateRoleUI();
+      });
+
+      // Tabs
+      $$('.tabBtn').forEach(btn => btn.addEventListener('click', () => setActiveTab(btn.dataset.tab)));
+
+      // Quick speak
+      $('#btnQuickSpeak').addEventListener('click', () => {
+        const msg = `Maa ke liye: ${getTodayMessage('mom')} \n\nPapa ke liye: ${getTodayMessage('dad')}`;
+        speak(msg);
+        burstParticles('sparkles', 14);
+      });
+
+      // Home buttons
+      $$('.btnPlayToday').forEach(btn => btn.addEventListener('click', () => {
+        const who = btn.dataset.who;
+        speak(getTodayMessage(who));
+        burstParticles(pickEffectForWho(who), 18);
+      }));
+      $$('.btnOpenToday').forEach(btn => btn.addEventListener('click', () => {
+        const who = btn.dataset.who;
+        const whoLabel = who === 'mom' ? 'Maa' : 'Papa';
+        openModal({
+          title: `${whoLabel} ke liye aaj ka sandesh`,
+          subtitle: `Today • ${todayKey()}`,
+          message: getTodayMessage(who),
+          bigEmoji: who === 'mom' ? '💞' : '⭐',
+          who,
+          effect: pickEffectForWho(who)
+        });
+      }));
+      $$('.btnTestNow').forEach(btn => btn.addEventListener('click', () => {
+        const who = btn.dataset.who;
+        triggerReminder(who, 'test', 'manual');
+      }));
+
+      // Hug
+      $('#btnMiniHug').addEventListener('click', () => {
+        openModal({
+          title: '🤗 Ek pyaara sa hug',
+          subtitle: 'For Mom & Dad',
+          message: 'Aap dono ko meri taraf se ek chhota sa hug… aur dher saara pyaar ❤️\n\nMaa-Papa, dhyaan rakhna…',
+          bigEmoji: '🤗',
+          effect: 'hearts'
+        });
+      });
+
+      // Send actions
+      $$('.btnPreviewSpeak').forEach(btn => btn.addEventListener('click', () => {
+        const who = btn.dataset.who;
+        const txt = (who === 'mom' ? $('#inputMom') : $('#inputDad')).value;
+        speak(txt);
+        burstParticles(who==='mom' ? $('#effectMom').value : $('#effectDad').value, 16);
+      }));
+
+      $$('.btnSendNow').forEach(btn => btn.addEventListener('click', () => {
+        const who = btn.dataset.who;
+        const input = who === 'mom' ? $('#inputMom') : $('#inputDad');
+        const msg = input.value.trim();
+        if (!msg) { toast('Kripya pehle message likhein.', 'warn'); return; }
+        const whoLabel = who === 'mom' ? 'Maa' : 'Papa';
+        const effect = who === 'mom' ? $('#effectMom').value : $('#effectDad').value;
+        openModal({
+        title: `${whoLabel} ke liye sandesh`,
+          subtitle: 'Send Now • Preview on this phone',
+          message: msg,
+          bigEmoji: who === 'mom' ? '💖' : '🌷',
+          who,
+          effect
+        });
+        speak(msg);
+      }));
+
+      $$('.btnSaveToRotation').forEach(btn => btn.addEventListener('click', () => {
+        const who = btn.dataset.who;
+        const input = who === 'mom' ? $('#inputMom') : $('#inputDad');
+        const msg = input.value.trim();
+        if (!msg) { toast('Pehle message likhein.', 'warn'); return; }
+        state.rotation[who] = Array.from(new Set([msg, ...(state.rotation[who] || [])]));
+        saveState();
+        toast('Rotation mein save ho gaya ✅', 'ok', 2000);
+        burstParticles(who==='mom'?'flowers':'stars', 16);
+      }));
+
+      // Reminders
+      $('#btnSaveReminders').addEventListener('click', () => {
+        saveState();
+        startScheduler();
+        toast('Reminders saved ✅', 'ok', 2000);
+      });
+      $$('.btnTestReminder').forEach(btn => btn.addEventListener('click', () => {
+        const who = btn.dataset.who;
+        triggerReminder(who, 'test', 'manual');
+      }));
+
+      // Settings events
+      $('#voiceSelect').addEventListener('change', () => {
+        state.voiceURI = $('#voiceSelect').value;
+        saveState();
+        toast('Voice selected ✅', 'ok', 1600);
+      });
+
+      $('#rateRange').addEventListener('input', () => {
+        state.rate = Number($('#rateRange').value);
+        $('#rateLabel').textContent = state.rate.toFixed(2);
+        saveState();
+      });
+      $('#pitchRange').addEventListener('input', () => {
+        state.pitch = Number($('#pitchRange').value);
+        $('#pitchLabel').textContent = state.pitch.toFixed(2);
+        saveState();
+      });
+
+      $('#btnVoiceSample').addEventListener('click', () => {
+        speak('Namaste! Main Tanu ki aawaaz hoon. Maa-Papa, dhyaan rakhna. ❤️');
+        burstParticles('sparkles', 14);
+      });
+
+      $('#toggleSurprise').addEventListener('click', () => {
+        state.surpriseOn = !state.surpriseOn;
+        $('#toggleSurprise').dataset.on = String(!!state.surpriseOn);
+        $('#toggleSurpriseMini').dataset.on = String(!!state.surpriseOn);
+        saveState();
+        toast(state.surpriseOn ? 'Surprises ON ✨' : 'Surprises OFF', 'ok', 1800);
+      });
+      $('#toggleSurpriseMini').addEventListener('click', () => {
+        state.surpriseOn = !state.surpriseOn;
+        $('#toggleSurprise').dataset.on = String(!!state.surpriseOn);
+        $('#toggleSurpriseMini').dataset.on = String(!!state.surpriseOn);
+        saveState();
+        toast(state.surpriseOn ? 'Surprises ON ✨' : 'Surprises OFF', 'ok', 1800);
+      });
+
+      $('#popupFreq').addEventListener('change', () => {
+        state.popupFreq = $('#popupFreq').value;
+        saveState();
+        toast('Frequency updated ✅', 'ok', 1500);
+      });
+
+      $('#toggleVariation').addEventListener('click', () => {
+        state.variationOn = !state.variationOn;
+        $('#toggleVariation').dataset.on = String(!!state.variationOn);
+        saveState();
+      });
+
+      $$('.btnStyle').forEach(btn => btn.addEventListener('click', () => {
+        state.emojiStyle = btn.dataset.style;
+        $('#styleLabel').textContent = state.emojiStyle;
+        saveState();
+        toast(`Style: ${state.emojiStyle}`, 'ok', 1400);
+        burstParticles('sparkles', 10);
+      }));
+      
+ $('#btnReset').addEventListener('click', () => {
+        const ok = confirm('Reset kar dein? (sab settings/messages reset ho jayenge)');
+        if (!ok) return;
+        state = structuredClone(defaultState);
+        saveState();
+        renderAll();
+        toast('Reset complete ✅', 'ok', 2000);
+      });
+
+      $('#btnStopSpeech').addEventListener('click', () => {
+        stopSpeech();
+        toast('Voice stopped', 'ok', 1200);
+      });
+
+      $('#btnChangeRole').addEventListener('click', () => {
+        localStorage.removeItem(ROLE_STORAGE_KEY);
+        currentRole = null;
+        location.reload();
+      });
+
+      // Voice recording
+      $('#btnAddVoice').addEventListener('click', openVoiceRecordingModal);
+      $('#btnStartRecord').addEventListener('click', startRecording);
+      $('#btnStopRecord').addEventListener('click', stopRecording);
+      $('#btnCloseVoiceModal').addEventListener('click', closeVoiceRecordingModal);
+      $('#voiceFileInput').addEventListener('change', (e) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = () => {
+          const name = ($('#voiceNameInput').value || file.name).trim();
+          const voiceObj = {
+            name: name || 'Voice',
+            audioData: reader.result,
+            duration: 0
+          };
+          const voicesMap = state.prerecordedVoices || {};
+          const id = Date.now() + '_' + Math.random().toString(36).slice(2,9);
+          voicesMap[id] = voiceObj;
+          savePrerecordedVoices(voicesMap);
+          renderPrerecordedVoices();
+          toast('Voice uploaded ✅', 'ok', 1800);
+          closeVoiceRecordingModal();
+        };
+        reader.readAsDataURL(file);
+      });
+
+      $('#btnSaveVoiceRecording').addEventListener('click', () => {
+        if (recordedChunks.length === 0) {
+          toast('Pehle record karein ya file select karein.', 'warn');
+          return;
+        }
+        if (mediaRecorder) stopRecording();
+      });
+
+      $('#btnShareVoices').addEventListener('click', async () => {
+        const voices = state.prerecordedVoices || {};
+        if (Object.keys(voices).length === 0) {
+          toast('Koi prerecorded voice nahin hai.', 'warn');
+          return;
+        }
+        const backup = {
+          voices: voices,
+          exportedAt: new Date().toISOString()
+        };
+        const blob = new Blob([JSON.stringify(backup, null, 2)], {type: 'application/json'});
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `dilse-voices-${todayKey()}.json`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+        toast('Voices exported ✅', 'ok', 2000);
+      });
+
+      // Modal
+      $('#btnCloseModal').addEventListener('click', closeModal);
+      $('#modalBackdrop').addEventListener('click', (e) => {
+        if (e.target === $('#modalBackdrop')) closeModal();
+      });
+      $('#btnModalSpeak').addEventListener('click', () => {
+        const msg = $('#modalMessage').textContent;
+        speak(msg);
+        burstParticles('sparkles', 14);
+      });
+      $('#btnModalDone').addEventListener('click', markDone);
+      $('#btnModalMore').addEventListener('click', modalSurprise);
+
+      // Notifications
+      $('#btnEnableNotifications').addEventListener('click', askNotifications);
+
+      // Backup
+      $('#btnExport').addEventListener('click', exportData);
+      $('#btnShare').addEventListener('click', shareData);
+      $('#fileImport').addEventListener('change', (e) => importData(e.target.files?.[0]));
+
+      // Resize handler
+      window.addEventListener('resize', () => {
+        const canvas = $('#confettiCanvas');
+        if (!canvas) return;
+        canvas.width = 1; canvas.height = 1;
+      });
+    }
+
+    function renderAll(){
+      renderStats();
+      renderHome();
+      renderRemindersForm();
+      renderPresets();
+      renderPrerecordedVoices();
+
+      $('#rateRange').value = String(state.rate || 1);
+      $('#pitchRange').value = String(state.pitch || 1);
+      $('#rateLabel').textContent = Number(state.rate || 1).toFixed(2);
+      $('#pitchLabel').textContent = Number(state.pitch || 1).toFixed(2);
+      $('#toggleSurprise').dataset.on = String(!!state.surpriseOn);
+      $('#toggleSurpriseMini').dataset.on = String(!!state.surpriseOn);
+      $('#toggleVariation').dataset.on = String(!!state.variationOn);
+      $('#popupFreq').value = state.popupFreq || 'med';
+      $('#styleLabel').textContent = state.emojiStyle || 'soft';
+
+      renderVoiceSelect();
+    }
+
+    function splashWelcome(){
+      const key = `${todayKey()}::welcomeShown`;
+      if (localStorage.getItem(key)) return;
+      localStorage.setItem(key, '1');
+      setTimeout(() => {
+        openModal({
+          title: 'Dil se ❤️',
+          subtitle: 'Aaj ka pyaar',
+          message: 'Maa-Papa, aap dono ko dher saara pyaar ❤️\n\nAaj bhi dhyaan rakhna… aur muskurate rehna ✨',
+          bigEmoji: '💞',
+          effect: 'confetti'
+        });
+      }, 450);
+    }
+
+    function init(){
+      state = loadState();
+      currentRole = loadRole();
+      $('#fileImport').addEventListener('change', (e) => importData(e.target.files?.[0]));
+
+      // Resize handler
+      window.addEventListener('resize', () => {
+        const canvas = $('#confettiCanvas');
+        if (!canvas) return;
+        canvas.width = 1; canvas.height = 1;
+      });
+    }
+
+    function renderAll(){
+      renderStats();
+      renderHome();
+      renderRemindersForm();
+      renderPresets();
+      renderPrerecordedVoices();
+
+      $('#rateRange').value = String(state.rate || 1);
+      $('#pitchRange').value = String(state.pitch || 1);
+      $('#rateLabel').textContent = Number(state.rate || 1).toFixed(2);
+      $('#pitchLabel').textContent = Number(state.pitch || 1).toFixed(2);
+      $('#toggleSurprise').dataset.on = String(!!state.surpriseOn);
+      $('#toggleSurpriseMini').dataset.on = String(!!state.surpriseOn);
+      $('#toggleVariation').dataset.on = String(!!state.variationOn);
+      $('#popupFreq').value = state.popupFreq || 'med';
+      $('#styleLabel').textContent = state.emojiStyle || 'soft';
+
+      renderVoiceSelect();
+    }
+
+    function splashWelcome(){
+      const key = `${todayKey()}::welcomeShown`;
+      if (localStorage.getItem(key)) return;
+      localStorage.setItem(key, '1');
+      setTimeout(() => {
+        openModal({
+          title: 'Dil se ❤️',
+          subtitle: 'Aaj ka pyaar',
+          message: 'Maa-Papa, aap dono ko dher saara pyaar ❤️\n\nAaj bhi dhyaan rakhna… aur muskurate rehna ✨',
+          bigEmoji: '💞',
+          effect: 'confetti'
+        });
+      }, 450);
+    }
+
+    function init(){
+      state = loadState();
+      currentRole = loadRole();
+      if (!currentRole) {
+        $('#roleSetupModal').classList.remove('hidden');
+        $('#roleSetupModal').classList.add('flex');
+      } else {
+        $('#roleSetupModal').classList.add('hidden');
+        updateRoleUI();
+      }
+
+      bindEvents();
+      refreshVoices();
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.onvoiceschanged = refreshVoices;
+        setTimeout(refreshVoices, 200);
+      }
+
+      renderAll();
+      setActiveTab('home');
+      startScheduler();
+      setupSurpriseLoop();
+      splashWelcome();
+
+      setInterval(renderHome, 30 * 1000);
+
+      setInterval(() => {
+        if (!state.surpriseOn) return;
+        if (document.hidden) return;
+        const roll = Math.random();
+        if (roll < 0.25) burstParticles('sparkles', 6);
+      }, 60 * 1000);
+    }
+
+    document.addEventListener('DOMContentLoaded', init);
+  </script>
+</body>
+</html>
